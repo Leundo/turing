@@ -150,10 +150,12 @@ vector<string> mask_word (vector<string> words, vector<bool> mask, string substi
 	return words;
 }
 
-string concat (vector<string> words) {
+string concat (vector<string> words, string filtered_str = "") {
 	string str = "";
 	for (auto word: words) {
-		str += word;
+		if (word != filtered_str) {
+			str += word;
+		}
 	}
 	return str;
 }

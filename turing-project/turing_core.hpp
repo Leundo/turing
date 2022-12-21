@@ -32,9 +32,9 @@ public:
 		is_verbose = turing_program.is_verbose;
 	}
 
-    TuringMachineExitCode run () {
+    tuple<TuringMachineExitCode, string> run () {
         if (parse() == _tm_error) {
-			return _tm_error;
+			return make_tuple(_tm_error, "");
 		}
 
         return simulate();
@@ -57,9 +57,9 @@ public:
 		return _tm_success;
     }
 
-    TuringMachineExitCode simulate () {
+    tuple<TuringMachineExitCode, string> simulate () {
 		if (init_turing_process() == _tm_error) {
-			return _tm_error;
+			return make_tuple(_tm_error, "");
 		}
 
 		log("==================== RUN ====================");
@@ -68,17 +68,17 @@ public:
         auto act_result = act();
         while (!get<1>(act_result)) {
             if (get<0>(act_result) == _tm_error) {
-                return _tm_error;
+                return make_tuple(_tm_error, "");
             }
             log("---------------------------------------------");
             log(convert_turing_process_to_string(turing_process, blank_symbol));
             if (contain(final_states, turing_process.state)) {
-                return _tm_success;
+                return make_tuple(_tm_success, concat(turing_process.tapes[0], blank_symbol));
             }
             act_result = act();
         }
         
-		return _tm_success;
+		return make_tuple(_tm_success, concat(turing_process.tapes[0], blank_symbol));
 	}
 
     void save (string &line) {
@@ -308,7 +308,7 @@ public:
     }
 
     void throw_error (string message) {
-        is_verbose = true;
+        // is_verbose = true;
 		if (!is_verbose) {
 			cerr << "illegal input" << endl;
 		} else {
@@ -319,7 +319,7 @@ public:
 	}
 
     void log (string message) {
-        is_verbose = true;
+        // is_verbose = true;
 		if (is_verbose) {
 			cout << message << endl;
 		}
