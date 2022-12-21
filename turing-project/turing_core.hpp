@@ -33,43 +33,11 @@ public:
 	}
 
     TuringMachineExitCode run () {
-        // vector<string> tape1 = vector<string>();
-        // vector<string> tape2 = vector<string>();
-        // tape1.push_back("_");
-        // tape1.push_back("apple");
-        // tape1.push_back("orangle");
-        // tape1.push_back("cat");
-
-        // tape2.push_back("egg");
-        // tape2.push_back("e");
-        // tape2.push_back("longlonglong");
-        // tape2.push_back("_");
-        
-        // vector<vector<string>> tapes = vector<vector<string>>();
-        // tapes.push_back(tape1);
-        // tapes.push_back(tape2);
-
-        // turing_process.first_number = -1;
-        // turing_process.tape_ptrs.push_back(1);
-        // turing_process.tape_ptrs.push_back(1);
-        // turing_process.tapes = tapes;
-
-        // cout << convert_turing_process_to_string(turing_process, "_") << endl;
-
-        // auto a = make_tuple("qwer", "abcd");
-        // auto b = make_tuple("qwera", "abcd");
-        // cout << (a == b) << endl;
-
         if (parse() == _tm_error) {
 			return _tm_error;
 		}
 
-        // auto action = find_action("cmp", "0_");
-        // cout << get<0>(action) << endl;
-        // cout << get<1>(action) << endl;
-        // print_vector(get<2>(action));
-
-        return _tm_success;
+        return simulate();
     }
 
     TuringMachineExitCode parse () {
@@ -88,6 +56,30 @@ public:
         tape_symbols_and_star.push_back("*");
 		return _tm_success;
     }
+
+    TuringMachineExitCode simulate () {
+		if (init_turing_process() == _tm_error) {
+			return _tm_error;
+		}
+
+		log("==================== RUN ====================");
+		log(convert_turing_process_to_string(turing_process, blank_symbol));
+
+        auto act_result = act();
+        while (!get<1>(act_result)) {
+            if (get<0>(act_result) == _tm_error) {
+                return _tm_error;
+            }
+            log("---------------------------------------------");
+            log(convert_turing_process_to_string(turing_process, blank_symbol));
+            if (contain(final_states, turing_process.state)) {
+                return _tm_success;
+            }
+            act_result = act();
+        }
+        
+		return _tm_success;
+	}
 
     void save (string &line) {
 		smatch match;
@@ -135,6 +127,82 @@ public:
             transition_func.insert(pair<tuple<string, string>, tuple<string, string, string>>(input, output));
         }
 	}
+
+    
+    tuple<TuringMachineExitCode, bool> act () {
+        auto action_tuple = find_action(turing_process.state, get_ptr_symbol());
+        if (get<0>(action_tuple) == _tm_error) {
+            return make_tuple(_tm_error, false);
+        } else if (get<1>(action_tuple) == true) {
+            return make_tuple(_tm_success, true);
+        }
+
+        turing_process.state = get<4>(action_tuple);
+        turing_process.n_step += 1;
+        for (int i = 0; i < n_tape; i++) {
+            turing_process.tapes[i][turing_process.tape_ptrs[i]] = get<2>(action_tuple)[i];
+        }
+        for (int i = 0; i < n_tape; i++) {
+            move_ptr(get<3>(action_tuple)[i], i);
+        }
+
+        return make_tuple(_tm_success, false);
+    }
+
+    void move_ptr(Move move, int index) {
+        if (move == _left) {
+            if (turing_process.tape_ptrs[index] == 0) {
+                for (int i = 0; i < n_tape; i++) {
+                    turing_process.tapes[i].insert(turing_process.tapes[i].begin(), blank_symbol);
+                    if (i != index) {
+                        turing_process.tape_ptrs[i] += 1;
+                    }
+                }
+                turing_process.first_number -= 1;
+            } else {
+                turing_process.tape_ptrs[index] -= 1;
+            }
+        } else if (move == _right) {
+            if (turing_process.tape_ptrs[index] + 1 >= turing_process.tapes[index].size()) {
+                turing_process.tapes[index].push_back(blank_symbol);
+            }
+            turing_process.tape_ptrs[index] += 1;
+        }
+    }
+
+    TuringMachineExitCode init_turing_process () {
+        for (int i = 0; i < n_tape; i++) {
+            auto tape = vector<string>();
+
+            if ( i == 0 && input.length() != 0) {
+                auto choped = chop(input, tape_symbols);
+                if (get<0>(choped) != -1) {
+                    throw_error(string("error: symbol") + string(" was not declared in the set of input symbols"));
+                    return _tm_error;
+                }
+                for (auto word: get<1>(choped)) {
+                    tape.push_back(word);
+                }
+                turing_process.tapes.push_back(tape);
+            } else {
+                tape.push_back(blank_symbol);
+                turing_process.tapes.push_back(tape);
+            }
+
+            turing_process.tape_ptrs.push_back(0);
+            turing_process.first_number = 0;
+            turing_process.state = start_state;
+        }
+        return _tm_success;
+    }
+
+    string get_ptr_symbol () {
+        string result = "";
+        for (int i = 0; i < n_tape; i++) {
+            result += turing_process.tapes[i][turing_process.tape_ptrs[i]];
+        }
+        return result;
+    }
 
     tuple<TuringMachineExitCode, bool, vector<string>, vector<Move>, string> find_action (string state, string inputs) {
         bool isHalt = true;
@@ -247,6 +315,13 @@ public:
 			cerr << "==================== ERR ====================" << endl;
 			cerr << message << endl;
 			cerr << "==================== END ====================" << endl;
+		}
+	}
+
+    void log (string message) {
+        is_verbose = true;
+		if (is_verbose) {
+			cout << message << endl;
 		}
 	}
 

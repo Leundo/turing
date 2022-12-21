@@ -158,4 +158,13 @@ string concat (vector<string> words) {
 	return str;
 }
 
+bool contain(vector<string> a, string b) {
+	for (auto item: a) {
+		if (item == b) {
+			return true;
+		}
+	}
+	return false;
+}
+
 #endif

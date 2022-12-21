@@ -127,7 +127,7 @@ string convert_turing_process_to_string (TuringProcess turing_process, string bl
 		tip = "Head" + to_string(i);
 		str += "\n" + tip + create_space(tip_length - tip.length()) + ":";
 		for (int j = begin; j <= end; j++) {
-			if (j + turing_process.first_number == turing_process.tape_ptrs[i]) {
+			if (j == turing_process.tape_ptrs[i]) {
 				str += " ^" + create_space(space[j] - 1);
 			} else {
 				str += " " + create_space(space[j]);
