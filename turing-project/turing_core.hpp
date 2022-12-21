@@ -36,7 +36,6 @@ public:
         if (parse() == _tm_error) {
 			return make_tuple(_tm_error, "");
 		}
-
         return simulate();
     }
 
@@ -52,6 +51,19 @@ public:
 			throw_error("error: definition of turing machine is imcomplete");
 			return _tm_error;
 		}
+
+        auto choped = chop(input, input_symbols);
+        if (get<0>(choped) != -1) {
+            auto error_message = string("error: symbol at position ") + to_string(get<0>(choped)) + string(" was not declared in the set of input symbols");
+            error_message += "\ninput: " + input + "\n       ";
+            for (int i = 0; i < get<0>(choped); i++) {
+                error_message += " ";
+            }
+            error_message += "^";
+            throw_error(error_message);
+            return _tm_error;
+        }
+
         tape_symbols_and_star = tape_symbols;
         tape_symbols_and_star.push_back("*");
 		return _tm_success;
