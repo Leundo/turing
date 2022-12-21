@@ -118,7 +118,6 @@ vector<bool> get_next_mask (vector<bool> this_mask) {
 			break;
 		}
 	}
-	// cout << last_false_after_true_ptr << endl;
 	if (last_false_after_true_ptr == 0) {
 		return create_init_mask(length, n_true+1);
 	} else {
@@ -140,6 +139,23 @@ vector<bool> get_next_mask (vector<bool> this_mask) {
 		}
 		return this_mask;
 	}
+}
+
+vector<string> mask_word (vector<string> words, vector<bool> mask, string substitution = "*") {
+	for (int i = 0; i < words.size(); i++) {
+		if (mask[i] == true) {
+			words[i] = substitution;
+		}
+	}
+	return words;
+}
+
+string concat (vector<string> words) {
+	string str = "";
+	for (auto word: words) {
+		str += word;
+	}
+	return str;
 }
 
 #endif

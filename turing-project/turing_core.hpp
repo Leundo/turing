@@ -50,7 +50,8 @@ public:
         // tapes.push_back(tape2);
 
         // turing_process.first_number = -1;
-        // turing_process.tape_ptr = 1;
+        // turing_process.tape_ptrs.push_back(1);
+        // turing_process.tape_ptrs.push_back(1);
         // turing_process.tapes = tapes;
 
         // cout << convert_turing_process_to_string(turing_process, "_") << endl;
@@ -63,19 +64,10 @@ public:
 			return _tm_error;
 		}
 
-        // auto n = get<0>(chop("reject2cmpcp", states));
-        // auto m = get<1>(chop("reject2cmpcp", states));
-        // cout << n << endl;
-        // print_vector(m, "");
-
-        auto mask = create_init_mask(6, 1);
-        while(mask.size() != 0) {
-            for (int i = 0; i < mask.size(); i++) {
-                cout << mask[i] << " ";
-            }
-            cout << endl;
-            mask = get_next_mask(mask);
-        }
+        // auto action = find_action("cmp", "0_");
+        // cout << get<0>(action) << endl;
+        // cout << get<1>(action) << endl;
+        // print_vector(get<2>(action));
 
         return _tm_success;
     }
@@ -92,6 +84,8 @@ public:
 			throw_error("error: definition of turing machine is imcomplete");
 			return _tm_error;
 		}
+        tape_symbols_and_star = tape_symbols;
+        tape_symbols_and_star.push_back("*");
 		return _tm_success;
     }
 
@@ -142,21 +136,57 @@ public:
         }
 	}
 
-    // tuple<TuringMachineExitCode, bool, vector<string>, vector<Move>, string> find_action (string state, string inputs) {
-    //     bool isHalt = true;
-    //     auto it = transition_func.find(make_tuple(state, inputs));
-    //     if (it == transition_func.end()) {
-    //         auto choped = chop(inputs, tape_symbols);
-    //         if (get<0>(choped) == -1 || get<1>(choped).size() != n_tape) {
-    //             throw_error("error: fail in chopping tape symbols");
-    //             return make_tuple(_tm_error, isHalt, vector<string>(), vector<Move>(), "");
-    //         }
+    tuple<TuringMachineExitCode, bool, vector<string>, vector<Move>, string> find_action (string state, string inputs) {
+        bool isHalt = true;
+        auto choped = chop(inputs, tape_symbols);
+        auto mask = create_init_mask(n_tape, 0);
 
-    //         // return make_tuple(isHalt, vector<string>(), vector<Move>(), "");
-    //     } else {
+        if (get<0>(choped) != -1 || get<1>(choped).size() != n_tape) {
+            throw_error("error: fail in chopping tape symbols");
+            return make_tuple(_tm_error, !isHalt, vector<string>(), vector<Move>(), "");
+        }
+        
 
-    //     }
-    // }
+        do {
+            mask_word(get<1>(choped), mask);
+            string input_symbols = concat(mask_word(get<1>(choped), mask));
+
+            auto it = transition_func.find(make_tuple(state, input_symbols));
+            if (it != transition_func.end()) {
+                auto choped_outputs = chop(get<0>(it->second), tape_symbols_and_star);
+                auto choped_outputs_symbol = get<1>(choped_outputs);
+
+                if (get<0>(choped_outputs) != -1 || choped_outputs_symbol.size() != n_tape) {
+                    throw_error("error: fail in chopping tape symbols");
+                    return make_tuple(_tm_error, !isHalt, vector<string>(), vector<Move>(), "");
+                }
+
+                for (int i = 0; i < choped_outputs_symbol.size(); i++) {
+                    if (choped_outputs_symbol[i] == "*") {
+                        choped_outputs_symbol[i] = get<1>(choped)[i];
+                    }
+                }
+
+                auto moves = vector<Move>();
+                for (auto move: get<1>(it->second)) {
+                    if (move == 'l') {
+                        moves.push_back(_left);
+                    } else if (move == 'r') {
+                        moves.push_back(_right);
+                    } else if (move == '*') {
+                        moves.push_back(_suspend);
+                    } else {
+                        throw_error("error: unknown move: " + to_string(move));
+                        return make_tuple(_tm_error, !isHalt, vector<string>(), vector<Move>(), "");
+                    }
+                }
+                return make_tuple(_tm_success, !isHalt, choped_outputs_symbol, moves, get<2>(it->second));
+            }
+            mask = get_next_mask(mask);
+        } while ( mask.size() > 0 );
+        
+        return make_tuple(_tm_success, isHalt, vector<string>(), vector<Move>(), "");
+    }
 
     void remove_note (string &line) {
 		size_t pos = line.find(NOTE_SYMBOL);
@@ -210,6 +240,7 @@ public:
     }
 
     void throw_error (string message) {
+        is_verbose = true;
 		if (!is_verbose) {
 			cerr << "illegal input" << endl;
 		} else {
@@ -233,6 +264,7 @@ private:
 	string blank_symbol = "";
 	vector<string> final_states;
 
+    vector<string> tape_symbols_and_star;
     int n_tape = 0;
     map<tuple<string, string>, tuple<string, string, string>> transition_func;
 

@@ -31,8 +31,8 @@ struct TuringProgram {
 
 struct TuringProcess {
 	vector<vector<string>> tapes = vector<vector<string>>();
-	// vector<int> tape_ptrs = vector<int>();
-	int tape_ptr = 0;
+	vector<int> tape_ptrs = vector<int>();
+	// int tape_ptr = 0;
 	int first_number = 0;
 	int n_step = 0;
 	string state = "";
@@ -40,7 +40,8 @@ struct TuringProcess {
 
 enum Move {
 	_left = 0,
-	_right = -1
+	_right = 1,
+	_suspend = 2,
 };
 
 enum TuringMachineExitCode {
@@ -106,8 +107,8 @@ string convert_turing_process_to_string (TuringProcess turing_process, string bl
 	for (int i = 0; i < turing_process.tapes.size(); i++) {
 		vector<int> space = space_list[i];
 
-		int begin = get<0>(find_non_blank_begin_and_end(turing_process.tapes[i], turing_process.tape_ptr, blank));
-		int end = get<1>(find_non_blank_begin_and_end(turing_process.tapes[i], turing_process.tape_ptr, blank));
+		int begin = get<0>(find_non_blank_begin_and_end(turing_process.tapes[i], turing_process.tape_ptrs[i], blank));
+		int end = get<1>(find_non_blank_begin_and_end(turing_process.tapes[i], turing_process.tape_ptrs[i], blank));
 
 		// cout << begin << " " << end << endl;
 		
@@ -126,7 +127,7 @@ string convert_turing_process_to_string (TuringProcess turing_process, string bl
 		tip = "Head" + to_string(i);
 		str += "\n" + tip + create_space(tip_length - tip.length()) + ":";
 		for (int j = begin; j <= end; j++) {
-			if (j + turing_process.first_number == turing_process.tape_ptr) {
+			if (j + turing_process.first_number == turing_process.tape_ptrs[i]) {
 				str += " ^" + create_space(space[j] - 1);
 			} else {
 				str += " " + create_space(space[j]);
