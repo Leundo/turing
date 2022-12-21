@@ -74,7 +74,6 @@ tuple<int, vector<string>> chop (string sentence, vector<string> words) {
 			return make_tuple(pos, choped_sentence);
 		}
 	}
-
 	return make_tuple(-1, choped_sentence);
 }
 
@@ -84,6 +83,63 @@ string create_space (int length) {
 		str += " ";
 	}
 	return str;
+}
+
+vector<bool> create_init_mask (int length, int n) {
+	auto mask = vector<bool>();
+	if (length > 0 && n <= length) {
+		for (int i = 0; i < n; i++) {
+			mask.push_back(true);
+		}
+		for (int i = 0; i < length - n; i++) {
+			mask.push_back(false);
+		}
+		
+	}
+	return mask;
+}
+
+
+vector<bool> get_next_mask (vector<bool> this_mask) {
+	int length = this_mask.size();
+	int n_true = 0;
+	for (int i = 0; i < length; i++) {
+		if (this_mask[i] == true) {
+			n_true += 1;
+		}
+	}
+	if (n_true == length) {
+		return vector<bool>();
+	}
+	
+	int last_false_after_true_ptr = length - 1;
+	for (; last_false_after_true_ptr >= 1; last_false_after_true_ptr--) {
+		if (this_mask[last_false_after_true_ptr] == false && this_mask[last_false_after_true_ptr-1] == true) {
+			break;
+		}
+	}
+	// cout << last_false_after_true_ptr << endl;
+	if (last_false_after_true_ptr == 0) {
+		return create_init_mask(length, n_true+1);
+	} else {
+		this_mask[last_false_after_true_ptr] = true;
+		this_mask[last_false_after_true_ptr-1] = false;
+		int n_true_after_last_false_after_true_ptr = 0;
+		for (int i = last_false_after_true_ptr + 1; i < length; i++) {
+			if (this_mask[i] == true) {
+				n_true_after_last_false_after_true_ptr += 1;
+			}
+		}
+		for (int i = last_false_after_true_ptr + 1; i < length; i++) {
+			if (n_true_after_last_false_after_true_ptr > 0) {
+				this_mask[i] = true;
+				n_true_after_last_false_after_true_ptr -= 1;
+			} else {
+				this_mask[i] = false;
+			}
+		}
+		return this_mask;
+	}
 }
 
 #endif

@@ -38,6 +38,11 @@ struct TuringProcess {
 	string state = "";
 };
 
+enum Move {
+	_left = 0,
+	_right = -1
+};
+
 enum TuringMachineExitCode {
 	_tm_success = 0,
 	_tm_error = -1
@@ -132,5 +137,7 @@ string convert_turing_process_to_string (TuringProcess turing_process, string bl
 
 	return str;
 }
+
+
 
 #endif
